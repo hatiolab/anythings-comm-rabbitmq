@@ -10,7 +10,7 @@ import org.springframework.context.event.ContextRefreshedEvent;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;
 
-import xyz.anythings.comm.rabbitmq.config.ModuleProperties;
+import xyz.anythings.comm.rabbitmq.config.AnythingsCommRabbitmqModuleProperties;
 import xyz.elidom.sys.config.ModuleConfigSet;
 import xyz.elidom.sys.system.service.api.IEntityFieldCache;
 import xyz.elidom.sys.system.service.api.IServiceFinder;
@@ -36,7 +36,7 @@ public class AnythingsCommRabbitmqInitializer {
 	private IEntityFieldCache entityFieldCache;
 	
 	@Autowired
-	private ModuleProperties module;
+	private AnythingsCommRabbitmqModuleProperties module;
 	
 	@Autowired
 	private ModuleConfigSet configSet;
