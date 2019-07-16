@@ -13,7 +13,7 @@ apply plugin: 'java'
 apply plugin: 'maven'
 apply plugin: 'eclipse'
 
-version = '1.0.0'
+version = '0.0.0.1'
 sourceCompatibility = 1.8
 compileJava.options.encoding = 'UTF-8'
 
@@ -26,7 +26,7 @@ ext {
 
 	majorVersion = 0
 	minorVersion = 0
-	pointVersion = 0
+	patchVersion = 0
 	buildVersion = 0
 	
 //	elingsVersion = isTask("snapshot") ? 'latest.integration' : 'latest.release'
@@ -96,7 +96,7 @@ task major() {
 	
 	++majorVersion;
 	minorVersion = 0;
-	pointVersion = 0;
+	patchVersion = 0;
 	buildVersion = 0;
 	
 	updateVersionInfo();
@@ -108,19 +108,19 @@ task minor() {
 	}
 	
 	++minorVersion;
-	pointVersion = 0;
-	buildVersion = 0;
+	patchVersion = 0;
+	++buildVersion;
 	
 	updateVersionInfo();
 }
 
-task point() {
-	if(!isTask("point")) {
+task patch() {
+	if(!isTask("patch")) {
 		return;
 	}
 	
-	++pointVersion;
-	buildVersion = 0;
+	++patchVersion;
+	++buildVersion;
 	
 	updateVersionInfo();
 }
@@ -188,7 +188,7 @@ def getCurrentModuleVersion(artifactId) {
 
 	majorVersion = Integer.parseInt(versionInfo[0]);
 	minorVersion = Integer.parseInt(versionInfo[1]);
-	pointVersion = Integer.parseInt(versionInfo[2]);
+	patchVersion = Integer.parseInt(versionInfo[2]);
 	
 	if(versionInfo.length == 4)
 		buildVersion = Integer.parseInt(versionInfo[3]);
@@ -200,7 +200,7 @@ def getCurrentModuleVersion(artifactId) {
  * Gegerate Version
  */
 def generateVersion() {
-	return majorVersion + "." + minorVersion + "." + pointVersion + "." + buildVersion;
+	return majorVersion + "." + minorVersion + "." + patchVersion + "." + buildVersion;
 }
 
 /**
@@ -258,10 +258,10 @@ def updateVersionInfo() {
 	def projectName = rootProject.projectDir.getName();
 	def projectPath = rootProject.projectDir.getPath().replaceAll("\\\\", "/");
 	def propertyDirPath = projectPath + '/src/main/resources/properties';
-	def moduleName = projectName.replaceAll("-",".");
-	def fileName = projectName + '.properties';
-	def versionPropertyName = moduleName + '.version:';
-	def timePropertyName = moduleName + '.built.at:';
+	def moduleName = projectName.split('-')[1];
+	def fileName = projectName.substring(projectName.indexOf("-") + 1, projectName.length()) + '.properties';
+	def versionPropertyName = 'anythings.' + moduleName + '.version:';
+	def timePropertyName = 'anythings.' + moduleName + '.built.at:';
 	
 	// File 정보 추출
 	File file = new File(propertyDirPath, fileName);

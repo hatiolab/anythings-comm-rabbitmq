@@ -17,7 +17,7 @@ import xyz.elidom.util.FormatUtil;
 @Component
 @EnableConfigurationProperties
 @PropertySource("classpath:/properties/anythings-comm-rabbitmq.properties")
-public class AnyThingsCommRabbitmqModuleProperties implements IModuleProperties {
+public class ModuleProperties implements IModuleProperties {
 	
 	/**
 	 * 모듈명
