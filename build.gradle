@@ -1,0 +1,41 @@
+buildscript {
+	ext {
+		baseUrl = "http://repo.hatiolab.com/nexus/content";
+		springBootVersion = '1.4.4.RELEASE'
+	}
+	repositories {
+		maven {
+			url baseUrl + '/groups/elidom-repository/'
+			//maven { url 'http://repo.spring.io/plugins-release' }
+		}
+	}
+	dependencies {
+		classpath("org.springframework.boot:spring-boot-gradle-plugin:${springBootVersion}")
+		classpath("org.springframework.build.gradle:propdeps-plugin:0.0.7")
+	}
+}
+
+apply from : 'elings.gradle'
+apply plugin: 'org.springframework.boot'
+
+jar {
+	manifest {
+		attributes 'Implementation-Title': 'AnyThings Communication RabbitMQ',
+				   'Implementation-Version': version
+	}
+}
+
+repositories {
+	maven {
+		url baseUrl + '/groups/elidom-repository/'
+	}
+	// mavenCentral()
+}
+
+ext {
+	rabbitMQVersion = getLastVersion('elings-rabbitmq')
+}
+
+dependencies {
+	compile("com.hatiolab:elings-rabbitmq:${rabbitMQVersion}") {changing = true}
+}
