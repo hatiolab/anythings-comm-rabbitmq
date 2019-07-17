@@ -6,17 +6,14 @@ buildscript {
 	repositories {
 		maven {
 			url baseUrl + '/groups/elidom-repository/'
-			//maven { url 'http://repo.spring.io/plugins-release' }
 		}
 	}
 	dependencies {
-		classpath("org.springframework.boot:spring-boot-gradle-plugin:${springBootVersion}")
 		classpath("org.springframework.build.gradle:propdeps-plugin:0.0.7")
 	}
 }
 
 apply from : 'anythings.gradle'
-apply plugin: 'org.springframework.boot'
 
 jar {
 	manifest {
@@ -29,7 +26,6 @@ repositories {
 	maven {
 		url baseUrl + '/groups/elidom-repository/'
 	}
-	// mavenCentral()
 }
 
 ext {
