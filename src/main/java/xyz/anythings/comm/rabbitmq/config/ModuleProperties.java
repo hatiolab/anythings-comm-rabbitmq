@@ -14,10 +14,10 @@ import xyz.elidom.util.FormatUtil;
  * 
  * @author yang
  */
-@Component
+@Component("anythingsCommRabbitmqModuleProperties")
 @EnableConfigurationProperties
 @PropertySource("classpath:/properties/anythings-comm-rabbitmq.properties")
-public class AnythingsCommRabbitmqModuleProperties implements IModuleProperties {
+public class ModuleProperties implements IModuleProperties {
 	
 	/**
 	 * 모듈명
