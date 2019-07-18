@@ -95,6 +95,20 @@ public class BrokerAdminService {
 		
 		this.restPutDefParamService(BrokerAdminUrls.POLICY_ADD, FormatUtil.toUnderScoreJsonString(mqPolicy), params);
 		
+		// 2.3 TRACE DEFAULT
+		params.put("name", "trace");
+		Map<String,Object> definitionTraceMap 
+		= ValueUtil.newMap("ha-mode,message-ttl,queue-master-locator", "all",10000, "client-local");
+		
+		Policy tracePolicy = new Policy();
+		tracePolicy.setApplyTo("queues");
+		tracePolicy.setPattern("trace_*");
+		tracePolicy.setPriority(1);
+		tracePolicy.setDefinition(definitionTraceMap);
+		
+		this.restPutDefParamService(BrokerAdminUrls.POLICY_ADD, FormatUtil.toUnderScoreJsonString(tracePolicy), params);
+		
+		
 		// 3. site admin 생성 
 		this.siteAdmin.addVirtualHost(vhost);
 		
