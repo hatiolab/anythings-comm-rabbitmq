@@ -34,4 +34,5 @@ ext {
 
 dependencies {
 	compile("com.hatiolab:elings-rabbitmq:${rabbitMQVersion}") {changing = true}
+	compile project(':anythings-sys')
 }
