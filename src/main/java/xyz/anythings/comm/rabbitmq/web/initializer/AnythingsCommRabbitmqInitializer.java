@@ -1,10 +1,6 @@
 /* Copyright © HatioLab Inc. All rights reserved. */
 package xyz.anythings.comm.rabbitmq.web.initializer;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -14,14 +10,12 @@ import org.springframework.context.event.ContextRefreshedEvent;
 import org.springframework.context.event.EventListener;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
-import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Component;
 
 import xyz.anythings.comm.rabbitmq.config.ModuleProperties;
 import xyz.elidom.rabbitmq.config.RabbitmqProperties;
 import xyz.elidom.rabbitmq.rest.VirtualHostController;
 import xyz.elidom.sys.config.ModuleConfigSet;
-import xyz.elidom.sys.system.config.module.IModuleProperties;
 import xyz.elidom.sys.system.service.api.IEntityFieldCache;
 import xyz.elidom.sys.system.service.api.IServiceFinder;
 import xyz.elidom.util.BeanUtil;
@@ -55,15 +49,6 @@ public class AnythingsCommRabbitmqInitializer {
 	@Autowired
 	private ModuleConfigSet configSet;
 	
-	@Autowired
-	private Environment environment;
-	
-	/**
-	 * 큐 명칭 기본 프로퍼티 명 
-	 */
-	private final String rabbitQueueProp = "mq.system.receive.queue.name.";
-	
-
 	@EventListener({ ContextRefreshedEvent.class })
 	public void ready(ContextRefreshedEvent event) {
 		this.logger.info("Anythings Communication Rabbitmq module initializing ready...");
@@ -76,34 +61,7 @@ public class AnythingsCommRabbitmqInitializer {
     void contextRefreshedEvent(ApplicationReadyEvent event) {
 		this.logger.info("Anythings Communication Rabbitmq module initializing started...");		
 		
-
 		this.logger.info("RabbitMq Queue Listen Ready start ...");
-		
-		Map<String,IModuleProperties> moduleProperties = configSet.getAll();
-		List<String> systemQueueList = new ArrayList<String>();
-		
-		for(String moduleName : moduleProperties.keySet()) {
-			String moduleQueueProp = this.rabbitQueueProp + moduleName;
-			
-			if(this.environment.containsProperty(moduleQueueProp)) {
-				String queueName = this.environment.getProperty(moduleQueueProp);
-				configSet.getConfig(moduleName).setRabbitmqQueue(queueName);
-				systemQueueList.add(queueName);
-			}
-		}
-		/*
-		for(String moduleName : moduleProperties.keySet()) {
-			if(moduleName.startsWith("anythings")) {
-				String queue = moduleProperties.get(moduleName).getRabbitQueue();
-				if(ValueUtil.isEqualIgnoreCase(queue, "not_use")) {
-				} else if (ValueUtil.isEmpty(queue)) {
-				} else {
-					systemQueueList.add(queue);
-				}
-			}
-		}
-		*/
-		this.properties.setSystemQueueList(systemQueueList);
 		
 		for(String vHostName : this.properties.getAppInitVHosts()) {
 			BeanUtil.get(VirtualHostController.class).addVhostListener(vHostName);

@@ -1,6 +1,7 @@
 package xyz.elidom.rabbitmq.rest;
 
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.function.Predicate;
@@ -20,6 +21,9 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.client.RestTemplate;
 
+import xyz.anythings.comm.rabbitmq.event.MwLogisQueueListEvent;
+import xyz.anythings.comm.rabbitmq.event.model.IQueueNameModel;
+import xyz.anythings.sys.event.EventPublisher;
 import xyz.elidom.dbist.dml.Page;
 import xyz.elidom.dbist.dml.Query;
 import xyz.elidom.orm.system.annotation.service.ApiDesc;
@@ -34,6 +38,7 @@ import xyz.elidom.rabbitmq.entity.Site;
 import xyz.elidom.rabbitmq.service.BrokerAdminService;
 import xyz.elidom.rabbitmq.service.ServiceUtil;
 import xyz.elidom.rabbitmq.service.model.VirtualHost;
+import xyz.elidom.sys.entity.Domain;
 import xyz.elidom.sys.system.service.AbstractRestService;
 import xyz.elidom.sys.util.SettingUtil;
 import xyz.elidom.util.BeanUtil;
@@ -56,6 +61,10 @@ public class VirtualHostController extends AbstractRestService {
 	
 	@Autowired
 	RabbitmqProperties mqProperties;
+	
+	@Autowired
+	private EventPublisher eventPublisher;
+
 		
 	private Logger logger = LoggerFactory.getLogger(VirtualHostController.class);
 	
@@ -141,15 +150,23 @@ public class VirtualHostController extends AbstractRestService {
 	@RequestMapping(value = "/addListener", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
 	@ApiDesc(description="Add Virtual host Trace, System Listener")
 	public boolean addVhostListener(@RequestParam(name="vhost") String vhost) {
-		BeanUtil.get(BrokerSiteAdmin.class).addVirtualHost(vhost);
 		
-		if(this.mqProperties.getTraceUse() == true) {
-			BeanUtil.get(TracePublish.class).addVirtualHost(vhost);
-			BeanUtil.get(TraceDeliver.class).addVirtualHost(vhost);
-			BeanUtil.get(TraceDead.class).addVirtualHost(vhost);
+		Domain domain = Domain.findByMwSiteCd(vhost);
+		
+		// 사이트 코드로 도메인 검색에 성공 하면 큐 생성  
+		if(ValueUtil.isNotEmpty(domain)) {
+			this.setVhostQueueList(domain);
+			
+			BeanUtil.get(BrokerSiteAdmin.class).addVirtualHost(vhost);
+			
+			if(this.mqProperties.getTraceUse() == true) {
+				BeanUtil.get(TracePublish.class).addVirtualHost(vhost);
+				BeanUtil.get(TraceDeliver.class).addVirtualHost(vhost);
+				BeanUtil.get(TraceDead.class).addVirtualHost(vhost);
+			}
+			
+			BeanUtil.get(SystemClient.class).addVirtualHost(vhost);
 		}
-		
-		BeanUtil.get(SystemClient.class).addVirtualHost(vhost);
 		
 		return true;
 	}
@@ -200,7 +217,6 @@ public class VirtualHostController extends AbstractRestService {
 		String managerAddr = SettingUtil.getValue("mq.manager.system.addresses", "localhost");
 		String[] managerAddrs = managerAddr.split(",");
 		
-		
 		for(Site site : list) {
 			if(site.getCudFlag_().equalsIgnoreCase("d")) {
 				this.removeVhostListener(site.getSiteCode());
@@ -234,5 +250,20 @@ public class VirtualHostController extends AbstractRestService {
 		}
 		
 		return result;
+	}
+	
+	private void setVhostQueueList(Domain domain) {
+		List<IQueueNameModel> systemQueueList = new ArrayList<IQueueNameModel>();
+		
+		// 초기 생성 큐 리스트 요청 이벤트 
+		MwLogisQueueListEvent initEvent = new MwLogisQueueListEvent(domain.getId());
+		initEvent = (MwLogisQueueListEvent)eventPublisher.publishEvent(initEvent);
+		
+		for(IQueueNameModel queueModel : initEvent.getInitQueueNames()) {
+			queueModel.setDomainSite(domain.getMwSiteCd());
+			systemQueueList.add(queueModel);
+		}
+		
+		this.mqProperties.addSystemQueueList(systemQueueList);
 	}
 }

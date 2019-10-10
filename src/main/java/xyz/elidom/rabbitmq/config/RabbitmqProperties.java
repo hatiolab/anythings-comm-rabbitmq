@@ -1,9 +1,13 @@
 package xyz.elidom.rabbitmq.config;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
+
+import xyz.anythings.comm.rabbitmq.event.model.IQueueNameModel;
+import xyz.elidom.util.ValueUtil;
 
 /**
  * rabbitmq 관련 properties 셋팅 
@@ -72,7 +76,7 @@ public class RabbitmqProperties {
 	/**
 	 * 시스템 메시지 리스너 설정 
 	 */
-	private List<String> systemQueueList;
+	private List<IQueueNameModel> systemQueueList;
 	
 	private List<String> appInitVHosts;
 	
@@ -132,12 +136,15 @@ public class RabbitmqProperties {
 		return traceUse;
 	}
 	
-	public List<String> getSystemQueueList(){
+	public List<IQueueNameModel> getSystemQueueList(){
 		return systemQueueList;
 	}
 	
-	public void setSystemQueueList(List<String> systemQueueList){
-		this.systemQueueList = systemQueueList;
+	public void addSystemQueueList(List<IQueueNameModel> systemQueueList){
+		if(ValueUtil.isEmpty(this.systemQueueList)) {
+			this.systemQueueList = new ArrayList<IQueueNameModel>();
+		}		
+		this.systemQueueList.addAll(systemQueueList);
 	}
 	
 	public List<String> getAppInitVHosts(){

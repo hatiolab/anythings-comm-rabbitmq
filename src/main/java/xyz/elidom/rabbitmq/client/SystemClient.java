@@ -8,6 +8,7 @@ import org.springframework.amqp.rabbit.listener.SimpleMessageListenerContainer;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
+import xyz.anythings.comm.rabbitmq.event.model.IQueueNameModel;
 import xyz.elidom.rabbitmq.config.RabbitmqProperties;
 import xyz.elidom.rabbitmq.connection.ConnectionCreater;
 import xyz.elidom.util.BeanUtil;
@@ -38,12 +39,15 @@ public class SystemClient extends CreateMessageReceiver implements IClient {
 		
 		Map<String, ClientTemplate> clients = new HashMap<String, ClientTemplate>();
 		
-		for(String queueName : mqProperties.getSystemQueueList()) {
-			BeanUtil.get(BrokerSiteAdmin.class).createSystemQueue(vHost, queueName);
-			SimpleMessageListenerContainer container = super.CreateMessageListener(vHost, queueName, clientType);
-			RabbitTemplate template = ConnectionCreater.CreateMessageSender(container.getConnectionFactory());
-			
-			clients.put(queueName, new ClientTemplate(container, template));
+		for(IQueueNameModel queueModel : mqProperties.getSystemQueueList()) {
+			if(ValueUtil.isEqualIgnoreCase(queueModel.getDomainSite(), vHost)) {
+				String queueName = queueModel.getQueueName();
+				BeanUtil.get(BrokerSiteAdmin.class).createSystemQueue(vHost, queueName);
+				SimpleMessageListenerContainer container = super.CreateMessageListener(vHost, queueName, clientType);
+				RabbitTemplate template = ConnectionCreater.CreateMessageSender(container.getConnectionFactory());
+				
+				clients.put(queueName, new ClientTemplate(container, template));
+			}
 		}
 		
 		vHostMap.put(vHost, clients);
