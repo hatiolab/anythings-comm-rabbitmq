@@ -2,12 +2,12 @@ package xyz.elidom.rabbitmq.config;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
-import xyz.anythings.comm.rabbitmq.event.model.IQueueNameModel;
-import xyz.elidom.util.ValueUtil;
+import xyz.anythings.comm.rabbitmq.model.SystemQueueNameModel;
 
 /**
  * rabbitmq 관련 properties 셋팅 
@@ -76,7 +76,7 @@ public class RabbitmqProperties {
 	/**
 	 * 시스템 메시지 리스너 설정 
 	 */
-	private List<IQueueNameModel> systemQueueList;
+	private List<SystemQueueNameModel> systemQueueList = new ArrayList<SystemQueueNameModel>();
 	
 	private List<String> appInitVHosts;
 	
@@ -136,15 +136,20 @@ public class RabbitmqProperties {
 		return traceUse;
 	}
 	
-	public List<IQueueNameModel> getSystemQueueList(){
+	public List<SystemQueueNameModel> getSystemQueueList(){
 		return systemQueueList;
 	}
 	
-	public void addSystemQueueList(List<IQueueNameModel> systemQueueList){
-		if(ValueUtil.isEmpty(this.systemQueueList)) {
-			this.systemQueueList = new ArrayList<IQueueNameModel>();
-		}		
-		this.systemQueueList.addAll(systemQueueList);
+	public void addSystemQueue(SystemQueueNameModel model) {
+		this.systemQueueList.add(model);
+	}
+	public void removeSystemQueue(String queueName) {
+		List<SystemQueueNameModel> result = this.systemQueueList.stream().filter(a -> a.getQueueName().equals(queueName)).collect(Collectors.toList());
+		this.systemQueueList.removeAll(result);
+	}
+	public boolean isSystemQueue(String queueName) {
+		long count = this.systemQueueList.stream().filter(a -> a.getQueueName().equals(queueName)).count();
+		return count > 0 ? true : false; 
 	}
 	
 	public List<String> getAppInitVHosts(){

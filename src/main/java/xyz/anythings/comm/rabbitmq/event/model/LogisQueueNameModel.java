@@ -7,12 +7,32 @@ package xyz.anythings.comm.rabbitmq.event.model;
  */
 public class LogisQueueNameModel implements IQueueNameModel{
 	
+	private String befQueueName;
 	private String areaCd;
 	private String stageCd;
 	private long domainId;
 	private String domainSite;
 	private String cudFlag_;
 	
+	public LogisQueueNameModel() {
+	}
+	
+	public LogisQueueNameModel(long domainId, String cudFlag_,String domainSite,String befQueueName, String areaCd, String stageCd) {
+		this.domainId = domainId;
+		this.cudFlag_ = cudFlag_;
+		this.domainSite = domainSite;
+		this.areaCd = areaCd;
+		this.stageCd = stageCd;
+		this.befQueueName = befQueueName;
+	}
+	
+	@Override
+	public String getBefQueueName() {
+		return this.befQueueName;
+	}
+	public void setBefQueueName(String befQueueName) {
+		this.befQueueName = befQueueName;
+	}
 	
 	public String getAreaCd() {
 		return areaCd;
@@ -34,6 +54,7 @@ public class LogisQueueNameModel implements IQueueNameModel{
 	public void setDomainId(long domainId) {
 		this.domainId = domainId;
 	}
+	@Override
 	public String getCudFlag_() {
 		return cudFlag_;
 	}

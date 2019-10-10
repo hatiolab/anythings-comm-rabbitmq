@@ -6,8 +6,10 @@ package xyz.anythings.comm.rabbitmq.event.model;
  *
  */
 public interface IQueueNameModel {
+	public String getBefQueueName();
 	public String getQueueName();
 	public void setDomainSite(String domainSite);
 	public String getDomainSite();
 	public long getDomainId();
+	public String getCudFlag_();
 }

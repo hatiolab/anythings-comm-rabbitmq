@@ -23,6 +23,7 @@ import org.springframework.web.client.RestTemplate;
 
 import xyz.anythings.comm.rabbitmq.event.MwLogisQueueListEvent;
 import xyz.anythings.comm.rabbitmq.event.model.IQueueNameModel;
+import xyz.anythings.comm.rabbitmq.model.SystemQueueNameModel;
 import xyz.anythings.sys.event.EventPublisher;
 import xyz.elidom.dbist.dml.Page;
 import xyz.elidom.dbist.dml.Query;
@@ -155,7 +156,7 @@ public class VirtualHostController extends AbstractRestService {
 		
 		// 사이트 코드로 도메인 검색에 성공 하면 큐 생성  
 		if(ValueUtil.isNotEmpty(domain)) {
-			this.setVhostQueueList(domain);
+			List<SystemQueueNameModel> queueList = this.setVhostQueueList(domain);
 			
 			BeanUtil.get(BrokerSiteAdmin.class).addVirtualHost(vhost);
 			
@@ -165,7 +166,7 @@ public class VirtualHostController extends AbstractRestService {
 				BeanUtil.get(TraceDead.class).addVirtualHost(vhost);
 			}
 			
-			BeanUtil.get(SystemClient.class).addVirtualHost(vhost);
+			BeanUtil.get(SystemClient.class).addVirtualHost(vhost,queueList);
 		}
 		
 		return true;
@@ -252,8 +253,8 @@ public class VirtualHostController extends AbstractRestService {
 		return result;
 	}
 	
-	private void setVhostQueueList(Domain domain) {
-		List<IQueueNameModel> systemQueueList = new ArrayList<IQueueNameModel>();
+	private List<SystemQueueNameModel> setVhostQueueList(Domain domain) {
+		List<SystemQueueNameModel> systemQueueList = new ArrayList<SystemQueueNameModel>();
 		
 		// 초기 생성 큐 리스트 요청 이벤트 
 		MwLogisQueueListEvent initEvent = new MwLogisQueueListEvent(domain.getId());
@@ -261,9 +262,9 @@ public class VirtualHostController extends AbstractRestService {
 		
 		for(IQueueNameModel queueModel : initEvent.getInitQueueNames()) {
 			queueModel.setDomainSite(domain.getMwSiteCd());
-			systemQueueList.add(queueModel);
+			systemQueueList.add(new SystemQueueNameModel(domain.getMwSiteCd(), queueModel.getQueueName()));
 		}
 		
-		this.mqProperties.addSystemQueueList(systemQueueList);
+		return systemQueueList;
 	}
 }

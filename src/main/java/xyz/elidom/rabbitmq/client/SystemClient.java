@@ -1,6 +1,7 @@
 package xyz.elidom.rabbitmq.client;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
@@ -8,11 +9,10 @@ import org.springframework.amqp.rabbit.listener.SimpleMessageListenerContainer;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-import xyz.anythings.comm.rabbitmq.event.model.IQueueNameModel;
+import xyz.anythings.comm.rabbitmq.model.SystemQueueNameModel;
 import xyz.elidom.rabbitmq.config.RabbitmqProperties;
 import xyz.elidom.rabbitmq.connection.ConnectionCreater;
 import xyz.elidom.util.BeanUtil;
-import xyz.elidom.util.ValueUtil;
 
 /**
  * 시스템 클라이언트 
@@ -34,23 +34,51 @@ public class SystemClient extends CreateMessageReceiver implements IClient {
 	 */
 	@Override
 	public void addVirtualHost(String vHost) {
-		if(vHostMap.containsKey(vHost) == true) return;
-		if(ValueUtil.isEmpty(mqProperties.getSystemQueueList())) return; 
-		
-		Map<String, ClientTemplate> clients = new HashMap<String, ClientTemplate>();
-		
-		for(IQueueNameModel queueModel : mqProperties.getSystemQueueList()) {
-			if(ValueUtil.isEqualIgnoreCase(queueModel.getDomainSite(), vHost)) {
-				String queueName = queueModel.getQueueName();
-				BeanUtil.get(BrokerSiteAdmin.class).createSystemQueue(vHost, queueName);
-				SimpleMessageListenerContainer container = super.CreateMessageListener(vHost, queueName, clientType);
-				RabbitTemplate template = ConnectionCreater.CreateMessageSender(container.getConnectionFactory());
-				
-				clients.put(queueName, new ClientTemplate(container, template));
-			}
+		return;
+	}
+	
+	public void addVirtualHost(String vHost, List<SystemQueueNameModel> queueList) {
+		if(vHostMap.containsKey(vHost) == false) {
+			vHostMap.put(vHost, new HashMap<String, ClientTemplate>());
 		}
 		
-		vHostMap.put(vHost, clients);
+		for(SystemQueueNameModel model : queueList) {
+			this.addSystemQueue(vHost, model.getQueueName());
+		}
+	}
+	
+	/**
+	 * vhost 에 시스템 큐 추가 
+	 * @param queueModel
+	 */
+	public void addSystemQueue(String vHost, String queueName) {
+		if(vHostMap.containsKey(vHost) == false) return;
+		
+		Map<String, ClientTemplate> vHostQueueMap = vHostMap.get(vHost);
+		
+		BeanUtil.get(BrokerSiteAdmin.class).createSystemQueue(vHost, queueName);
+		SimpleMessageListenerContainer container = super.CreateMessageListener(vHost, queueName, clientType);
+		RabbitTemplate template = ConnectionCreater.CreateMessageSender(container.getConnectionFactory());
+		
+		vHostQueueMap.put(queueName, new ClientTemplate(container, template));
+		mqProperties.addSystemQueue(new SystemQueueNameModel(vHost, queueName));
+	}
+	
+	/**
+	 * vhost 에 시스템 큐 삭제 
+	 * @param queueModel
+	 */
+	public void removeSystemQueue(String vHost, String queueName) {
+		if(vHostMap.containsKey(vHost) == false) return;
+
+		Map<String, ClientTemplate> vHostQueueMap = vHostMap.get(vHost);
+		
+		if(vHostQueueMap.containsKey(queueName)) {
+			vHostQueueMap.get(queueName).container.destroy();
+			vHostQueueMap.remove(queueName);
+		}
+		
+		mqProperties.removeSystemQueue(queueName);
 	}
 	
 	/**
@@ -65,6 +93,7 @@ public class SystemClient extends CreateMessageReceiver implements IClient {
 		
 		for(String queueName : clientMap.keySet()) {
 			clientMap.get(queueName).container.destroy();
+			mqProperties.removeSystemQueue(queueName);
 		}
 		
 		vHostMap.remove(vHost);

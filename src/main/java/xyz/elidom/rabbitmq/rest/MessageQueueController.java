@@ -4,9 +4,15 @@ package xyz.elidom.rabbitmq.rest;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.event.EventListener;
+import org.springframework.core.Ordered;
+import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
+import org.springframework.http.client.HttpComponentsClientHttpRequestFactory;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -15,11 +21,15 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.client.RestTemplate;
 
+import xyz.anythings.comm.rabbitmq.event.MwQueueManageEvent;
+import xyz.anythings.comm.rabbitmq.event.model.IQueueNameModel;
 import xyz.elidom.dbist.dml.Filter;
 import xyz.elidom.dbist.dml.Page;
 import xyz.elidom.orm.system.annotation.service.ApiDesc;
 import xyz.elidom.orm.system.annotation.service.ServiceDesc;
+import xyz.elidom.rabbitmq.client.SystemClient;
 import xyz.elidom.rabbitmq.config.RabbitmqProperties;
 import xyz.elidom.rabbitmq.service.BrokerAdminService;
 import xyz.elidom.rabbitmq.service.ServiceUtil;
@@ -29,6 +39,7 @@ import xyz.elidom.rabbitmq.service.model.QueueSearch;
 import xyz.elidom.sys.SysConfigConstants;
 import xyz.elidom.sys.system.service.AbstractRestService;
 import xyz.elidom.sys.util.SettingUtil;
+import xyz.elidom.util.BeanUtil;
 import xyz.elidom.util.FormatUtil;
 import xyz.elidom.util.ValueUtil;
 
@@ -49,6 +60,16 @@ public class MessageQueueController extends AbstractRestService {
 	
 	@Autowired
 	RabbitmqProperties properties;
+	
+	@Autowired
+	RabbitmqProperties mqProperties;
+	
+	private Logger logger = LoggerFactory.getLogger(MessageQueueController.class);
+	
+	
+	private String addSystemQueueUrl = "http://{addr}:{port}/rest/rabbitmq/queue/addSystemQueue?vhost={vhost}&queue={queue}";
+	private String removeSystemQueueUrl = "http://{addr}:{port}/rest/rabbitmq/queue/removeSystemQueue?vhost={vhost}&queue={queue}";
+
 	
 	@Override
 	protected Class<?> entityClass() {
@@ -91,7 +112,7 @@ public class MessageQueueController extends AbstractRestService {
 			
 			boolean isSystemQueue = false;
 			
-			if(ValueUtil.isInclude(properties.getSystemQueueList(), itemQueueName)) isSystemQueue = true;
+			if(properties.isSystemQueue(itemQueueName)) isSystemQueue = true;
 			else if (itemQueueName.startsWith("trace")) isSystemQueue = true;
 			
 			item.setSiteCode(siteCode);
@@ -147,5 +168,101 @@ public class MessageQueueController extends AbstractRestService {
 			}
 		}
 		return true;
+	}
+	
+	
+	/**
+	 * 사이트의 시스템 큐 추가 
+	 * @param vhost
+	 * @return
+	 */
+	@RequestMapping(value = "/addSystemQueue", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
+	@ApiDesc(description="Add Virtual Host Listen System Queue")
+	public boolean addSystemQueue(@RequestParam(name="vhost") String vhost, @RequestParam(name="queue") String queue) {
+		BeanUtil.get(SystemClient.class).addSystemQueue(vhost, queue);
+		return true;
+	}
+	
+
+	/**
+	 * 사이트의 시스템 큐 제거 
+	 * @param vhost
+	 * @return
+	 */
+	@RequestMapping(value = "/removeSystemQueue", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
+	@ApiDesc(description="Remove Virtual Host Listen System Queue")
+	public boolean removeSystemQueue(@RequestParam(name="vhost") String vhost, @RequestParam(name="queue") String queue) {
+		BeanUtil.get(SystemClient.class).removeSystemQueue(vhost, queue);
+		return true;
+	}
+	
+	
+	/**
+	 * 큐 관리 이벤트 처리자 
+	 * @param event
+	 */
+	@EventListener(condition = "#event.isExecuted() == false")
+	@Order(Ordered.LOWEST_PRECEDENCE)
+	public void getRabbitMqVhostQueueList(MwQueueManageEvent event) {
+		
+		List<IQueueNameModel> modelList = event.getModelList();
+		
+		for(IQueueNameModel model : modelList) {
+			if(model.getCudFlag_().equalsIgnoreCase("c")) {
+				this.requestAddSystemQueue(model.getDomainSite(), model.getQueueName());
+			} else if( model.getCudFlag_().equalsIgnoreCase("u")) {
+				this.requestRemoveSystemQueue(model.getDomainSite(), model.getBefQueueName());
+				this.adminServie.deleteQueue(model.getDomainSite(), model.getBefQueueName(), true);
+				this.requestAddSystemQueue(model.getDomainSite(), model.getQueueName());
+			} else if (model.getCudFlag_().equalsIgnoreCase("d")) {
+				this.requestRemoveSystemQueue(model.getDomainSite(), model.getQueueName());
+				this.adminServie.deleteQueue(model.getDomainSite(), model.getQueueName(), true);
+			}
+		}
+		
+		event.setExecuted(true);
+	}
+	
+	private void requestAddSystemQueue(String vHost, String queueName) {
+		HttpComponentsClientHttpRequestFactory factory = new HttpComponentsClientHttpRequestFactory();
+		factory.setConnectTimeout(3000);
+		factory.setReadTimeout(3000);
+		
+		RestTemplate rest = new RestTemplate(factory);
+
+		String managerAddr = SettingUtil.getValue("mq.manager.system.addresses", "localhost");
+		String[] managerAddrs = managerAddr.split(",");
+		
+		for(String addr : managerAddrs){
+			try {
+				boolean restRes = rest.getForObject(this.addSystemQueueUrl, Boolean.class, 
+						ValueUtil.newMap("addr,port,vhost,queue", addr,this.mqProperties.getManagerPort(), vHost, queueName));
+				logger.info(String.format("add System Queue : %s , addr : %s , result %s", queueName, addr, restRes));
+			}catch(Exception e) {
+				logger.info(String.format("add System Queue : %s , addr : %s , result %s \n%s", queueName, addr, "err", e.getMessage()));
+			}
+		}
+	}
+	
+	
+	private void requestRemoveSystemQueue(String vHost, String queueName) {
+		HttpComponentsClientHttpRequestFactory factory = new HttpComponentsClientHttpRequestFactory();
+		factory.setConnectTimeout(3000);
+		factory.setReadTimeout(3000);
+		
+		RestTemplate rest = new RestTemplate(factory);
+
+		String managerAddr = SettingUtil.getValue("mq.manager.system.addresses", "localhost");
+		String[] managerAddrs = managerAddr.split(",");
+
+		for(String addr : managerAddrs){
+			try {
+				boolean restRes = rest.getForObject(this.removeSystemQueueUrl, Boolean.class, 
+						ValueUtil.newMap("addr,port,vhost,queue", addr,this.mqProperties.getManagerPort(), vHost, queueName));
+				logger.info(String.format("remove System Queue : %s , addr : %s , result %s", queueName, addr, restRes));
+			}catch(Exception e) {
+				logger.info(String.format("remove System Queue : %s , addr : %s , result %s \n%s", queueName, addr, "err", e.getMessage()));
+			}
+		}
 	}
 }
