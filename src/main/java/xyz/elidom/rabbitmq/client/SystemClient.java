@@ -12,6 +12,7 @@ import org.springframework.stereotype.Component;
 import xyz.anythings.comm.rabbitmq.model.SystemQueueNameModel;
 import xyz.elidom.rabbitmq.config.RabbitmqProperties;
 import xyz.elidom.rabbitmq.connection.ConnectionCreater;
+import xyz.elidom.sys.SysConstants;
 import xyz.elidom.util.BeanUtil;
 
 /**
@@ -101,20 +102,27 @@ public class SystemClient extends CreateMessageReceiver implements IClient {
 	
 	/**
 	 * 메시지 publish 
-	 * @param vHost 사이트 코드 
+	 * @param vHost 사이트 코드
+	 * @param sendQueueName 전송 큐 이름
 	 * @param destId 목적지 라우팅 키 
 	 * @param message 메시지 
 	 * @return 
 	 */
 	public boolean sendMessage(String vHost, String sendQueueName, String destId, String message) {
-		if(vHostMap.containsKey(vHost) == false) return false;
-		if(vHostMap.get(vHost).containsKey(sendQueueName) == false) return false;
+		if(!vHostMap.containsKey(vHost)) {
+			return false;
+		}
+		
+		if(!vHostMap.get(vHost).containsKey(sendQueueName)) {
+			return false;
+		}
 		
 		// amqp to mqtt 전송시 route key 가 / -> comma
-		if(destId.contains("/")) destId = destId.replaceAll("/", ".");
+		if(destId.contains(SysConstants.SLASH)) {
+			destId = destId.replaceAll(SysConstants.SLASH, SysConstants.COMMA);
+		}
 		
-		vHostMap.get(vHost).get(sendQueueName).template.convertAndSend(mqProperties.getBrokerExchange(), destId,message);
-		
+		vHostMap.get(vHost).get(sendQueueName).template.convertAndSend(mqProperties.getBrokerExchange(), destId, message);
 		return true;
 	}
 	
