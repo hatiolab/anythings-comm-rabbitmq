@@ -119,7 +119,7 @@ public class SystemClient extends CreateMessageReceiver implements IClient {
 		
 		// amqp to mqtt 전송시 route key 가 / -> comma
 		if(destId.contains(SysConstants.SLASH)) {
-			destId = destId.replaceAll(SysConstants.SLASH, SysConstants.COMMA);
+			destId = destId.replaceAll(SysConstants.SLASH, SysConstants.DOT);
 		}
 		
 		vHostMap.get(vHost).get(sendQueueName).template.convertAndSend(mqProperties.getBrokerExchange(), destId, message);
