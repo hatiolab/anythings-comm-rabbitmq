@@ -8,7 +8,6 @@ package xyz.anythings.comm.rabbitmq.event.model;
 public class LogisQueueNameModel implements IQueueNameModel{
 	
 	private String befQueueName;
-	private String areaCd;
 	private String stageCd;
 	private long domainId;
 	private String domainSite;
@@ -17,13 +16,12 @@ public class LogisQueueNameModel implements IQueueNameModel{
 	public LogisQueueNameModel() {
 	}
 	
-	public LogisQueueNameModel(long domainId, String cudFlag_,String domainSite,String befQueueName, String areaCd, String stageCd) {
+	public LogisQueueNameModel(long domainId, String cudFlag_,String domainSite,String befQueueName, String stageCd) {
 		this.domainId = domainId;
 		this.cudFlag_ = cudFlag_;
 		this.domainSite = domainSite;
-		this.areaCd = areaCd;
-		this.stageCd = stageCd;
 		this.befQueueName = befQueueName;
+		this.stageCd = stageCd;
 	}
 	
 	@Override
@@ -32,19 +30,6 @@ public class LogisQueueNameModel implements IQueueNameModel{
 	}
 	public void setBefQueueName(String befQueueName) {
 		this.befQueueName = befQueueName;
-	}
-	
-	public String getAreaCd() {
-		return areaCd;
-	}
-	public void setAreaCd(String areaCd) {
-		this.areaCd = areaCd;
-	}
-	public String getStageCd() {
-		return stageCd;
-	}
-	public void setStageCd(String stageCd) {
-		this.stageCd = stageCd;
 	}
 	
 	@Override
@@ -66,6 +51,14 @@ public class LogisQueueNameModel implements IQueueNameModel{
 		return domainSite;
 	}
 	
+	public String getStageCd() {
+		return stageCd;
+	}
+
+	public void setStageCd(String stageCd) {
+		this.stageCd = stageCd;
+	}
+	
 	@Override
 	public void setDomainSite(String domainSite) {
 		this.domainSite = domainSite;
@@ -73,6 +66,6 @@ public class LogisQueueNameModel implements IQueueNameModel{
 	
 	@Override
 	public String getQueueName() {
-		return this.getDomainSite() + '/' + this.getAreaCd() + '/' + this.stageCd;
+		return this.getStageCd();
 	}
 }

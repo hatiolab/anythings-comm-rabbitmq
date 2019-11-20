@@ -74,10 +74,22 @@ public class BrokerSiteAdmin implements IClient{
 		
 		
 		// 큐, 익스체인지 바인딩 
-		this.setBinding(vHost, queueName, queueName, mqProperties.getBrokerExchange(), null);
-		this.setBinding(vHost, queueName, queueName.replaceAll("/", "."), mqProperties.getBrokerExchange(), null);
-		
+		this.setSystemQueueBinding(vHost, queueName, queueName);
 		return true;
+	}
+	
+	/**
+	 * 시스템 큐에 라우팅 키 바인딩 
+	 * @param vHost
+	 * @param queueName
+	 * @param routingKey
+	 */
+	private void setSystemQueueBinding(String vHost, String queueName, String routingKey) {
+		this.setBinding(vHost, queueName, queueName, mqProperties.getBrokerExchange(), null);
+		
+		if(ValueUtil.isEqual(queueName, queueName.replaceAll("/", ".")) == false) {
+			this.setBinding(vHost, queueName, queueName.replaceAll("/", "."), mqProperties.getBrokerExchange(), null);
+		}
 	}
 	
 	/**
@@ -156,7 +168,7 @@ public class BrokerSiteAdmin implements IClient{
 		this.setQueue(vHost, queueName, null);
 		
 		if(is_system_queue) {
-			this.setBinding(vHost, queueName, queueName, this.mqProperties.getBrokerExchange(), null);
+			this.setSystemQueueBinding(vHost, queueName, queueName);
 			return;
 		}
 		
