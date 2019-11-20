@@ -30,10 +30,11 @@ public class TraceMessageConverter {
 	public static ITraceModel convertPublishMessage(org.springframework.amqp.core.MessageProperties messageProperties, byte[] body) throws Exception{
 		
 		String bodyString = new String(body);
+		
 		TraceMessage message = FormatUtil.underScoreJsonToObject(bodyString, TraceMessage.class);
 		MessageProperties properties = message.getProperties();
 		
-		
+
 		String routingKeyStr = messageProperties.getHeaders().get("routing_keys").toString();
 		routingKeyStr = routingKeyStr.substring(1, routingKeyStr.length() -1).trim();
 				
@@ -73,6 +74,10 @@ public class TraceMessageConverter {
 		model.setLogTime(new Date());
 		model.setLogTimeLong(model.getLogTime().getTime());
 		model.setSite(messageProperties.getHeaders().get("vhost").toString());
+		
+		
+		model.setAction(message.getBody().getAction());
+		model.setEquipId(message.getBody().getEquipId());
 		
 		return model;
 	}
