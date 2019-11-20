@@ -39,15 +39,14 @@ public class SystemMessageReceiveEvent extends ApplicationEvent {
 	    ReceiveMessage receiveMessage = FormatUtil.underScoreJsonToObject(bodyString, ReceiveMessage.class);
 		MessageProperties properties = receiveMessage.getProperties();	    
 	    String[] splitQueue = properties.getSourceId().split(SysConstants.SLASH);
+	    this.stageCd = splitQueue[0];
 	    
-	    if(ValueUtil.isNotEmpty(splitQueue) && splitQueue.length > 2) {
-	    	this.stageCd = splitQueue[2];
-	    	this.equipType = (splitQueue.length > 3) ? splitQueue[3] : SysConstants.EMPTY_STRING;
-	    	this.equipVendor = (splitQueue.length > 4) ? splitQueue[4] : SysConstants.EMPTY_STRING;
-	    	this.equipCd = (splitQueue.length > 5) ? splitQueue[5] : SysConstants.EMPTY_STRING;
+	    if(ValueUtil.isNotEmpty(splitQueue) && splitQueue.length > 1) {
+	    	this.equipType = (splitQueue.length > 1) ? splitQueue[1] : SysConstants.EMPTY_STRING;
+	    	this.equipVendor = (splitQueue.length > 2) ? splitQueue[2] : SysConstants.EMPTY_STRING;
+	    	this.equipCd = (splitQueue.length > 3) ? splitQueue[3] : SysConstants.EMPTY_STRING;
 	    	
 	    } else {
-	    	this.stageCd = SysConstants.EMPTY_STRING;
 	    	this.equipType = SysConstants.EMPTY_STRING;
 	    	this.equipVendor = SysConstants.EMPTY_STRING;
 	    	this.equipCd = SysConstants.EMPTY_STRING;
