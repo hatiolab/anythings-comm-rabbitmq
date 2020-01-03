@@ -260,9 +260,11 @@ public class VirtualHostController extends AbstractRestService {
 		MwLogisQueueListEvent initEvent = new MwLogisQueueListEvent(domain.getId());
 		initEvent = (MwLogisQueueListEvent)eventPublisher.publishEvent(initEvent);
 		
-		for(IQueueNameModel queueModel : initEvent.getInitQueueNames()) {
-			queueModel.setDomainSite(domain.getMwSiteCd());
-			systemQueueList.add(new SystemQueueNameModel(domain.getMwSiteCd(), queueModel.getQueueName()));
+		if(initEvent.isExecuted()) {
+			for(IQueueNameModel queueModel : initEvent.getInitQueueNames()) {
+				queueModel.setDomainSite(domain.getMwSiteCd());
+				systemQueueList.add(new SystemQueueNameModel(domain.getMwSiteCd(), queueModel.getQueueName()));
+			}
 		}
 		
 		return systemQueueList;
