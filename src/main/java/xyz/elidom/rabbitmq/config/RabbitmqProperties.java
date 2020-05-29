@@ -22,7 +22,10 @@ public class RabbitmqProperties {
 	
 	/**
 	 * 브로커 관련 설정 
-	 */
+	 */	
+	// RabbitMQ 모듈 사용 여부 
+	@Value("${mq.module.use:false}")
+	private boolean useMqModule;
 	// 브로커 주소 ( def : localhost )
 	@Value("${mq.broker.address:localhost}")
 	private String brokerAddress;
@@ -158,5 +161,11 @@ public class RabbitmqProperties {
 	
 	public void setAppInitVHosts(List<String> appInitVHosts) {
 		this.appInitVHosts = appInitVHosts;
+	}
+	public boolean isUseMqModule() {
+		return useMqModule;
+	}
+	public void setUseMqModule(boolean useMqModule) {
+		this.useMqModule = useMqModule;
 	}
 }

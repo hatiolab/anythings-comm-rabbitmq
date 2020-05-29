@@ -67,6 +67,12 @@ public class ElingsRabbitmqInitializer {
 	
 	@EventListener({ApplicationReadyEvent.class})
     void contextRefreshedEvent(ApplicationReadyEvent event) {
+		
+		if(this.properties.isUseMqModule() == false ) {
+			this.logger.info("Rabbitmq module not used...");		
+			return;
+		} 
+		
 		this.logger.info("Rabbitmq module initializing started...");		
 		
 		// 트레이스 사용유무에 따라서 트레이스 기능 초기화 유무 결정 
