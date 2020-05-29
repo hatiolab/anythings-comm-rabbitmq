@@ -59,15 +59,17 @@ public class AnythingsCommRabbitmqInitializer {
 	@EventListener({ApplicationReadyEvent.class})
 	@Order(Ordered.LOWEST_PRECEDENCE)
     void contextRefreshedEvent(ApplicationReadyEvent event) {
-		this.logger.info("Anythings Communication Rabbitmq module initializing started...");		
-		
-		this.logger.info("RabbitMq Queue Listen Ready start ...");
-		
-		for(String vHostName : this.properties.getAppInitVHosts()) {
-			BeanUtil.get(VirtualHostController.class).addVhostListener(vHostName);
+		if(this.properties.isUseMqModule()) {
+			this.logger.info("Anythings Communication Rabbitmq module initializing started...");		
+			
+			this.logger.info("RabbitMq Queue Listen Ready start ...");
+				
+			for(String vHostName : this.properties.getAppInitVHosts()) {
+				BeanUtil.get(VirtualHostController.class).addVhostListener(vHostName);
+			}
+			
+			this.logger.info("RabbitMq Queue Listen Ready Finished ...");
 		}
-		
-		this.logger.info("RabbitMq Queue Listen Ready Finished ...");
     }
 	
 	/**
